@@ -20,6 +20,7 @@ serial.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/interrupt.h
 serial.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/utils/ringbuf.h
 serial.obj: ../serial.h
 serial.obj: ../myIO.h
+serial.obj: ../myFIFO.h
 
 ../serial.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.2/include/stdint.h: 
@@ -41,3 +42,4 @@ C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/interrupt.h:
 C:/ti/TivaWare_C_Series-2.1.0.12573/utils/ringbuf.h: 
 ../serial.h: 
 ../myIO.h: 
+../myFIFO.h: 

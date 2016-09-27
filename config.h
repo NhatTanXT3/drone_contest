@@ -18,8 +18,8 @@
 #include "driverlib/interrupt.h"
 //#include "utils/uartstdio.h"
 #include "driverlib/systick.h"
-//#include "utils/ringbuf.h"
-//#include "myFIFO.h"
+#include "utils/ringbuf.h"
+#include "myFIFO.h"
 //#include "mpu6050.h"
 //#include "myI2C.h"
 #include "myTimer.h"
@@ -31,7 +31,9 @@
 //#include "PID.h"
 //#include "MaxSonar.h"
 //#include "Kinect.h"
-#include "config_hardware.h"
+
+#include "numManipulate.h"
+
 
 
 

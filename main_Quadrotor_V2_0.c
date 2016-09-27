@@ -35,7 +35,7 @@ void main(void) {
 	//	UART1_Init();
 	UART0_Init();
 
-	//	myFIFO_init(&communicationFIFO);
+
 	//	myFIFO_init(&kinectFIFO);
 
 	//	I2C1_Init();
@@ -128,50 +128,48 @@ void task_100Hz(){
 
 
 void display_com(){
-
-
 	char buffer[20];
 	toggle_led[0]^=1;
 	led(LED_BLUE,toggle_led[0]);
 	float2num(2.37,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_1_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(-34.12,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_2_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(-12343.23,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_3_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	float2num(-65.23,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_4_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	float2num(0.35,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_5_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	float2num(-0.35,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_6_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(0,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_7_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(12343.23,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_8_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(-12343.23,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_9_);
-	UartPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	float2num(-12343.23,buffer);
 	UARTCharPut(UART_BASE_USE ,CN_10_);
-	UartPutStrLn(UART_COM_2_CONTROLLER_,buffer);
+	SerialPutStrLn(UART_COM_2_CONTROLLER_,buffer);
 	toggle_led[0]^=1;
 	led(LED_BLUE,toggle_led[0]);
 }
@@ -378,6 +376,6 @@ void communication()
 		}//end of switch case
 
 		//		printf(Uart.Command_Data);
-		UartPutStrLn(UART_BASE_USE,Uart.Command_Data);
+		SerialPutStrLn(UART_BASE_USE,Uart.Command_Data);
 	} //end of if(Uart.Flag_receive)
 }

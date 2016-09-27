@@ -9,9 +9,8 @@
 #define MYFIFO_H_
 
 #define FIFO_BASE
+#define FIFO_TERMINATOR_ '\0'
 
-//#define USE_TXFIFO_
-//extern tRingBufObject sRingBuf;
 typedef struct{
 	tRingBufObject Tx;
 	tRingBufObject Rx;
@@ -19,8 +18,7 @@ typedef struct{
 	uint8_t RxBuffer[128];
 } FIFO;
 
-extern FIFO communicationFIFO;
-extern FIFO kinectFIFO;
+
 
 extern char pcBuffer[128],pcData[20];
 

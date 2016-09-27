@@ -8,8 +8,11 @@ CG_TOOL_ROOT := C:/ti/ccsv6/tools/compiler/ti-cgt-arm_5.2.2
 
 ORDERED_OBJS += \
 "./main_Quadrotor_V2_0.obj" \
+"./myFIFO.obj" \
 "./myIO.obj" \
 "./myTimer.obj" \
+"./numManipulate.obj" \
+"./ringbuf.obj" \
 "./serial.obj" \
 "./tm4c123gh6pm_startup_ccs.obj" \
 "C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/ccs/Debug/driverlib.lib" \
@@ -151,8 +154,8 @@ drone_rebuilt.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "main_Quadrotor_V2_0.pp" "myIO.pp" "myTimer.pp" "serial.pp" "tm4c123gh6pm_startup_ccs.pp" 
-	-$(RM) "main_Quadrotor_V2_0.obj" "myIO.obj" "myTimer.obj" "serial.obj" "tm4c123gh6pm_startup_ccs.obj" 
+	-$(RM) "main_Quadrotor_V2_0.pp" "myFIFO.pp" "myIO.pp" "myTimer.pp" "numManipulate.pp" "ringbuf.pp" "serial.pp" "tm4c123gh6pm_startup_ccs.pp" 
+	-$(RM) "main_Quadrotor_V2_0.obj" "myFIFO.obj" "myIO.obj" "myTimer.obj" "numManipulate.obj" "ringbuf.obj" "serial.obj" "tm4c123gh6pm_startup_ccs.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

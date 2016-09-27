@@ -3,7 +3,10 @@
 #ifndef QUADROTOR_CURRENT_WORK_SERIAL_H_
 #define QUADROTOR_CURRENT_WORK_SERIAL_H_
 
-// Define uart for hardware
+#define USE_FIFO_UART_
+/*
+ * Define uart for hardware
+ */
 #define UART_BASE_USE 			UART0_BASE // define uart module used in this program for communication
 //#define UART_BASE_KINECT	UART6_BASE
 #define UART_COM_2_CONTROLLER_				UART0_BASE
@@ -11,7 +14,7 @@
 
 
 
-#define TERMINATOR_ '\0'
+#define STR_TERMINATOR_ '\0'
 
 #define CN_1_ '~'
 #define CN_2_ '!'
@@ -32,6 +35,7 @@ typedef struct {
 } MyUart;
 extern MyUart Uart;
 extern MyUart UartKinect;
+
 /*
  * Define the protocol
  */
@@ -75,44 +79,21 @@ extern MyUart UartKinect;
 #define CTL2COM_SCAN_PARAMETER		60//'<'
 #define CTL2COM_DISPLAY				38//'&'
 
-//extern char * float2num(float num);
-extern void float2num(float num, char *str);
-extern void int2num(int num,char *str);
-extern void set_position (char *string, int16_t *position);
+
 // init UART_port
 extern void UART0_Init();
 extern void UART6_Init();
 extern void UART5_Init();
 extern void UART1_Init();
 
-extern void UartPutStr(uint32_t ui32Base,char *uart_str);
-extern void UartGetStr(uint32_t ui32Base,char *uart_str);
+extern void SerialGetStr(uint32_t ui32Base,char *uart_str);
 
-extern void  UartPutStr_NonTer(uint32_t ui32Base,char *uart_str);
-extern void UartPutStrLn(uint32_t ui32Base,char *uart_str);
+extern void SerialPutStr(uint32_t ui32Base,char *uart_str);
+extern void SerialPutStr_NonTer(uint32_t ui32Base,char *uart_str);
+extern void SerialPutStrLn(uint32_t ui32Base,char *uart_str);
 
-// hien thi so thap phan dang xxx.xx
-extern void UART_float_display(uint32_t ui32Base , float num,bool terminator);
 
-// hien thi so nguyen dang chuoi, so co dang xxxxx
-extern  void UART_int_display(uint32_t ui32Base,int16_t num,bool terminator);
 
-// gui 3 so float co dang xxx.xxaxxx.xxaxxx.xx
-extern  void UART_3_float_display(uint32_t ui32Base,float num1, float num2, float num3 );
-
-// send 3 integer number xxxxxaxxxxxaxxxxx|terminator|
-extern void UART_3_int_display(uint32_t ui32Base,int16_t num1, int16_t num2, int16_t num3 );
-extern void UART_3_uint32_display(uint32_t ui32Base,uint32_t num1, uint32_t num2, uint32_t num3 );
-// send n integer number
-extern void UART_n_int_display(uint32_t ui32Base,uint32_t *num,uint8_t size);
-
-// gan gia tri choi so cho bien kp
-extern void set_float_value (char *string,float *kp);
-extern void set_int_value (char *string,int32_t *kp);
-extern void float2str(float num,char *kq);
-extern void int2str(int32_t num,char *kq);
-
-extern char *num2str (unsigned char num);
 
 #endif //QUADROTOR_CURRENT_WORK_SERIAL_H_
 

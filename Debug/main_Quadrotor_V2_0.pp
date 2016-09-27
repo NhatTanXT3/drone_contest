@@ -20,10 +20,12 @@ main_Quadrotor_V2_0.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/gpio.h
 main_Quadrotor_V2_0.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/uart.h
 main_Quadrotor_V2_0.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/interrupt.h
 main_Quadrotor_V2_0.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/systick.h
+main_Quadrotor_V2_0.obj: C:/ti/TivaWare_C_Series-2.1.0.12573/utils/ringbuf.h
+main_Quadrotor_V2_0.obj: ../myFIFO.h
 main_Quadrotor_V2_0.obj: ../myTimer.h
 main_Quadrotor_V2_0.obj: ../myIO.h
 main_Quadrotor_V2_0.obj: ../serial.h
-main_Quadrotor_V2_0.obj: ../config_hardware.h
+main_Quadrotor_V2_0.obj: ../numManipulate.h
 
 ../main_Quadrotor_V2_0.c: 
 ../config.h: 
@@ -45,7 +47,9 @@ C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/gpio.h:
 C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/uart.h: 
 C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/interrupt.h: 
 C:/ti/TivaWare_C_Series-2.1.0.12573/driverlib/systick.h: 
+C:/ti/TivaWare_C_Series-2.1.0.12573/utils/ringbuf.h: 
+../myFIFO.h: 
 ../myTimer.h: 
 ../myIO.h: 
 ../serial.h: 
-../config_hardware.h: 
+../numManipulate.h: 

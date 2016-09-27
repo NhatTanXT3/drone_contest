@@ -30,6 +30,16 @@
 			<type>1</type>
 			<locationURI>TIVAWARE_INSTALL/driverlib/ccs/Debug/driverlib.lib</locationURI>
 		</link>
+		<link>
+			<name>ringbuf.c</name>
+			<type>1</type>
+			<locationURI>TIVAWARE_INSTALL/utils/ringbuf.c</locationURI>
+		</link>
+		<link>
+			<name>ringbuf.h</name>
+			<type>1</type>
+			<locationURI>TIVAWARE_INSTALL/utils/ringbuf.h</locationURI>
+		</link>
 	</linkedResources>
 	<variableList>
 		<variable>
