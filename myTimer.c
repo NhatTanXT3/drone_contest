@@ -16,34 +16,15 @@
 
 #include "myIO.h"
 #include  "myTimer.h"
+#include "RF.h"
+#include "safety.h"
+
 //#include "PPM.h"
 
 
 volatile uint32_t seconds=0; //variable for capture second
-extern volatile struct{
-	unsigned char RF_module:1;
-	unsigned char MaxSonar:1;
-	unsigned char System:1;
-} Flag_Safe;
 
-extern struct{
-	unsigned char run_controller:1;
-	//	unsigned char motor:1;
-	unsigned char test_motor:1;
-	unsigned char display:1;
-	unsigned char set_parameter_roll:1;
-	unsigned char set_parameter_pitch:1;
-	unsigned char set_parameter_yaw:1;
-	unsigned char set_parameter_y:1;
-	unsigned char set_parameter_x:1;
-	unsigned char set_parameter_z:1;
-	unsigned char PD_controller:1;
-	unsigned char PID_controller:1;
-	unsigned char PD_y_controller:1;
-	unsigned char PID_y_controller:1;
-	unsigned char Position_controller:1;
-	volatile unsigned char sonar:1;
-}Flag;
+
 
 //extern uint8_t toggle_led[];
 extern uint16_t PositionSensor_count;
@@ -97,11 +78,11 @@ void SycTick_Interrupt_Handler(void)
 	SysTick_Int_Count.Hz_5++;
 
 	FlagTimer.Hz_200=1;
-	if(Flag.sonar==1)
-	{
-//		Flag.sonar=0;
-//		led(LED_BLUE,0);
-	}
+//	if(Flag.sonar==1)
+//	{
+//		//		Flag.sonar=0;
+//		//		led(LED_BLUE,0);
+//	}
 
 	if(SysTick_Int_Count.Hz_100==COUNT_100_HZ_)
 	{
@@ -136,26 +117,35 @@ void SycTick_Interrupt_Handler(void)
 		 */
 		//	if((RF_pulse_count>=40)&&(PositionSensor_count>=15);
 
+		if(RF_module.signal_count>=1)
+		{
+			Flag_Safe.RF_module=1;
+		}
+		else
+		{
+			Flag_Safe.RF_module=0;
+		}
+		RF_module.signal_count=0;
 
-//		if(MaxSonar.fail_signal_count<=1)
-//		{
-//			Flag_Safe.MaxSonar=1;
-//		}
-//		else
-//		{
-//			Flag_Safe.MaxSonar=0;
-//		}
+		//		if(MaxSonar.fail_signal_count<=1)
+		//		{
+		//			Flag_Safe.MaxSonar=1;
+		//		}
+		//		else
+		//		{
+		//			Flag_Safe.MaxSonar=0;
+		//		}
 
-//		if(Flag_Safe.MaxSonar & Flag_Safe.RF_module)
-//		{
-//			Flag_Safe.System=1;
-//		}
-//		else
-//		{
-//			Flag_Safe.System=0;
-//		}
+		//		if(Flag_Safe.MaxSonar & Flag_Safe.RF_module)
+		//		{
+		//			Flag_Safe.System=1;
+		//		}
+		//		else
+		//		{
+		//			Flag_Safe.System=0;
+		//		}
 
-//		MaxSonar.fail_signal_count=0;
+		//		MaxSonar.fail_signal_count=0;
 	}
 }
 

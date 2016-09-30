@@ -3,18 +3,19 @@
 #ifndef QUADROTOR_CURRENT_WORK_SERIAL_H_
 #define QUADROTOR_CURRENT_WORK_SERIAL_H_
 
-#define USE_FIFO_UART_
+//#define USE_FIFO_UART_
 /*
  * Define uart for hardware
  */
 #define UART_BASE_USE 			UART0_BASE // define uart module used in this program for communication
 //#define UART_BASE_KINECT	UART6_BASE
-#define UART_COM_2_CONTROLLER_				UART0_BASE
+#define UART_COM_2_CONTROLLER_				UART6_BASE
 #define UART_IMAGE_SENSOR_2_CONTROLLER_		UART6_BASE
 
 
 
-#define STR_TERMINATOR_ '\0'
+#define STR_TERMINATOR_ '\0' //string from MCU
+#define COM_TERMINATOR_ '\n' // string from computer
 
 #define CN_1_ '~'
 #define CN_2_ '!'
@@ -39,45 +40,56 @@ extern MyUart UartKinect;
 /*
  * Define the protocol
  */
-#define COM2CTL_RUN					42//'*'
-#define COM2CTL_RUN_ON					49//'1'
-#define COM2CTL_RUN_OFF					48//'0'
+#define COM2CTL_MOTOR_		'm'
+#define TEST_MOTOR_1_			'1'
+#define TEST_MOTOR_2_			'2'
+#define TEST_MOTOR_3_			'3'
+#define TEST_MOTOR_4_			'4'
+#define MOTOR_STOP_				'0'
 
-#define COM2CTL_TEST_MOTOR			33//'!'
-#define COM2CTL_TEST_MOTOR_ON			49//'1'
-#define COM2CTL_TEST_MOTOR_OFF			48//'0'
-#define COM2CTL_TEST_MOTOR_1		34//'"'
-#define COM2CTL_TEST_MOTOR_2		35//'#'
-#define COM2CTL_TEST_MOTOR_3		36//'$'
-#define COM2CTL_TEST_MOTOR_4		37//'%'
-
-#define COM2CTL_DISPLAY				38//'&' reserve 38 to 41
-#define COM2CTL_DISPLAY_ON				49//'1'
-#define COM2CTL_DISPLAY_OFF				48//'0'
-
-#define COM2CTL_MOTOR				39// '''
-#define COM2CTL_MOTOR_ON				49//'1'
-#define COM2CTL_MOTOR_OFF				48//'0'
-
-#define SENSOR2CTL_POSITION			40//'('
-
-#define COM2CTL_SET_PARAMETER		59//';'
-#define COM2CTL_SET_PARAMETER_OFF		48//'0'
-#define	COM2CTL_SET_PARAMETER_ROLL		60//'<' reserve 60 to 64
-#define COM2CTL_SET_PARAMETER_PITCH		61//'='
-#define COM2CTL_SET_PARAMETER_YAW		62//'>'
-#define COM2CTL_SET_PARAMETER_Y			63//'?'
-#define COM2CTL_SET_PARAMETER_X			64//'@'
-#define COM2CTL_SET_PARAMETER_Z			40//'('
+#define COM2CTL_DISPLAY_ON_				'e'
+#define COM2CTL_DISPLAY_OFF_			'f'
 
 
-#define COM2CTL_SCAN_PARAMETER		60//'<'
-#define COM2CTL_SET_KP				61//'='
-#define COM2CTL_SET_KI				62//'>'
-#define COM2CTL_SET_KD				63//'?'
-
-#define CTL2COM_SCAN_PARAMETER		60//'<'
-#define CTL2COM_DISPLAY				38//'&'
+//#define COM2CTL_RUN					42//'*'
+//#define COM2CTL_RUN_ON					49//'1'
+//#define COM2CTL_RUN_OFF					48//'0'
+//
+//#define COM2CTL_TEST_MOTOR			33//'!'
+//#define COM2CTL_TEST_MOTOR_ON			49//'1'
+//#define COM2CTL_TEST_MOTOR_OFF			48//'0'
+//#define COM2CTL_TEST_MOTOR_1		34//'"'
+//#define COM2CTL_TEST_MOTOR_2		35//'#'
+//#define COM2CTL_TEST_MOTOR_3		36//'$'
+//#define COM2CTL_TEST_MOTOR_4		37//'%'
+//
+//#define COM2CTL_DISPLAY				38//'&' reserve 38 to 41
+//#define COM2CTL_DISPLAY_ON				49//'1'
+//#define COM2CTL_DISPLAY_OFF				48//'0'
+//
+//#define COM2CTL_MOTOR				39// '''
+//#define COM2CTL_MOTOR_ON				49//'1'
+//#define COM2CTL_MOTOR_OFF				48//'0'
+//
+//#define SENSOR2CTL_POSITION			40//'('
+//
+//#define COM2CTL_SET_PARAMETER		59//';'
+//#define COM2CTL_SET_PARAMETER_OFF		48//'0'
+//#define	COM2CTL_SET_PARAMETER_ROLL		60//'<' reserve 60 to 64
+//#define COM2CTL_SET_PARAMETER_PITCH		61//'='
+//#define COM2CTL_SET_PARAMETER_YAW		62//'>'
+//#define COM2CTL_SET_PARAMETER_Y			63//'?'
+//#define COM2CTL_SET_PARAMETER_X			64//'@'
+//#define COM2CTL_SET_PARAMETER_Z			40//'('
+//
+//
+//#define COM2CTL_SCAN_PARAMETER		60//'<'
+//#define COM2CTL_SET_KP				61//'='
+//#define COM2CTL_SET_KI				62//'>'
+//#define COM2CTL_SET_KD				63//'?'
+//
+//#define CTL2COM_SCAN_PARAMETER		60//'<'
+//#define CTL2COM_DISPLAY				38//'&'
 
 
 // init UART_port
@@ -88,11 +100,11 @@ extern void UART1_Init();
 
 extern void SerialGetStr(uint32_t ui32Base,char *uart_str);
 
+extern void SerialPutChar(uint32_t ui32Base,unsigned char uart_char);
 extern void SerialPutStr(uint32_t ui32Base,char *uart_str);
 extern void SerialPutStr_NonTer(uint32_t ui32Base,char *uart_str);
 extern void SerialPutStrLn(uint32_t ui32Base,char *uart_str);
-
-
+extern void SerialTerminator(uint32_t ui32Base);
 
 
 #endif //QUADROTOR_CURRENT_WORK_SERIAL_H_

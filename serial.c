@@ -31,35 +31,49 @@ FIFO communicationFIFO;
  * ====================UART6_INIT=====================================
  */
 
-//void  UART6_Interrupt_Handler(void)
-//{
-//	// return: true-the masked interrupt status | false -the current interrupt status
-//	UARTIntClear(UART6_BASE,UART_INT_RT|UART_INT_RX);//|UART_INT_RX
-//	unsigned char flag_valid_data=0;
-//	char charData;
-//
-////	toggle_led[2]^=1;
-////	led(LED_RED,toggle_led[2]);
-//	while(UARTCharsAvail(UART6_BASE))
-//	{
-//		charData=(char)UARTCharGet(UART6_BASE);
-//		if(charData==STR_TERMINATOR_)
-//			flag_valid_data=1;
-//		FIFO_Rx_CharPut(&kinectFIFO,charData);
-//	}
-//
-//	if(flag_valid_data==1)
-//	{
-//		flag_valid_data=0;
-//		FIFO_Rx_StrGet(&kinectFIFO,UartKinect.Command_Data);
-//		UartKinect.Flag_receive=1;
-//		//			UartPutStr(UART1_BASE,Uart.Command_Data);
-//	}
-//
-//
-//	//		SerialGetStr(UART1_BASE,Uart.Command_Data);
-//	//		Uart.Flag_receive=1;
-//}
+void  UART6_Interrupt_Handler(void)
+{
+#ifndef USE_FIFO_UART_
+	UARTIntClear(UART6_BASE,UART_INT_RT|UART_INT_RX);//|UART_INT_RX
+	SerialGetStr(UART6_BASE,Uart.Command_Data);
+	Uart.Flag_receive=1;
+#else
+	// return: true-the masked interrupt status | false -the current interrupt status
+	uint32_t interrupt_status;
+	interrupt_status=UARTIntStatus(UART6_BASE,true);
+
+	if((((interrupt_status&UART_INT_RT)==UART_INT_RT)|((interrupt_status&UART_INT_RX)==UART_INT_RX))==1)
+	{
+		UARTIntClear(UART6_BASE,UART_INT_RT|UART_INT_RX);//|UART_INT_RX
+		unsigned char flag_valid_data=0;
+		char charData;
+
+		while(UARTCharsAvail(UART6_BASE))
+		{
+			charData=(char)UARTCharGet(UART6_BASE);
+			if(charData==COM_TERMINATOR_)
+			{
+				flag_valid_data=1;
+				FIFO_Rx_CharPut(&communicationFIFO,STR_TERMINATOR_);
+			}
+			else
+				FIFO_Rx_CharPut(&communicationFIFO,charData);
+		}
+
+		if(flag_valid_data==1)
+		{
+			flag_valid_data=0;
+			FIFO_Rx_StrGet(&communicationFIFO,Uart.Command_Data);
+			Uart.Flag_receive=1;
+		}
+	}
+	else if((interrupt_status&UART_INT_TX)==UART_INT_TX)
+	{
+		UARTIntClear(UART6_BASE,UART_INT_TX);
+		update_hardwareFIFO(&communicationFIFO,UART6_BASE);
+	}
+#endif
+}
 
 //void UART1_Interrupt_Handler(void)
 //{
@@ -120,9 +134,9 @@ void UART0_Interrupt_Handler(void)
 	UARTIntClear(UART0_BASE,UART_INT_RT|UART_INT_RX);//|UART_INT_RX
 	SerialGetStr(UART0_BASE,Uart.Command_Data);
 
-	if(!(UARTBusy(UART0_BASE))){
-		SerialPutStr(UART0_BASE,Uart.Command_Data);
-	}
+	//	if(!(UARTBusy(UART0_BASE))){
+	//		SerialPutStr_NonTer(UART0_BASE,Uart.Command_Data);
+	//	}
 	Uart.Flag_receive=1;
 
 	//	if((UARTIntStatus(UART0_BASE,true)&UART_INT_TX)==UART_INT_TX)
@@ -134,6 +148,7 @@ void UART0_Interrupt_Handler(void)
 	//	}
 #else
 	// return: true-the masked interrupt status | false -the current interrupt status
+
 	uint32_t interrupt_status;
 	interrupt_status=UARTIntStatus(UART0_BASE,true);
 
@@ -146,13 +161,19 @@ void UART0_Interrupt_Handler(void)
 		while(UARTCharsAvail(UART0_BASE))
 		{
 			charData=(char)UARTCharGet(UART0_BASE);
-			if(charData==STR_TERMINATOR_)
+			if(charData==COM_TERMINATOR_)
+			{
 				flag_valid_data=1;
-			FIFO_Rx_CharPut(&communicationFIFO,charData);
+				FIFO_Rx_CharPut(&communicationFIFO,STR_TERMINATOR_);
+			}
+			else
+				FIFO_Rx_CharPut(&communicationFIFO,charData);
 		}
 
 		if(flag_valid_data==1)
 		{
+			toggle_led[1]^=1;
+			led(LED_GREEN,toggle_led[1]);
 			flag_valid_data=0;
 			FIFO_Rx_StrGet(&communicationFIFO,Uart.Command_Data);
 			Uart.Flag_receive=1;
@@ -201,7 +222,14 @@ void UART6_Init()
 
 	IntPrioritySet(INT_UART6,0xE0);
 
-	UARTIntEnable(UART6_BASE,  UART_INT_RT|UART_INT_RX); //only enable RX and RTinterrupts
+#ifdef USE_FIFO_UART_
+	UARTTxIntModeSet(UART6_BASE,UART_TXINT_MODE_EOT);
+	UARTIntEnable(UART6_BASE,  UART_INT_RT|UART_INT_RX|UART_INT_TX); //only enable RX and RTinterrupts
+	myFIFO_init(&communicationFIFO);
+#else
+	UARTIntEnable(UART6_BASE, UART_INT_RX|UART_INT_RT);
+#endif
+
 }
 
 void UART0_Init()
@@ -220,7 +248,7 @@ void UART0_Init()
 	IntEnable(INT_UART0); //enable the UART interrupt
 	IntPrioritySet(INT_UART0,0xE0);
 
-#ifdef USE_FIFO_UART
+#ifdef USE_FIFO_UART_
 	UARTTxIntModeSet(UART0_BASE,UART_TXINT_MODE_EOT);
 	UARTIntEnable(UART0_BASE, UART_INT_RX|UART_INT_RT|UART_INT_TX);
 	myFIFO_init(&communicationFIFO);
@@ -312,48 +340,67 @@ void  SerialPutStr_NonTer(uint32_t ui32Base,char *uart_str)
 
 void SerialGetStr(uint32_t ui32Base,char *uart_str)
 {
-	*uart_str= (char)UARTCharGet(ui32Base);
-	while (*uart_str != '\n')
+	char charData;
+	charData=(char)UARTCharGet(ui32Base);
+	//	*uart_str= (char)UARTCharGet(ui32Base);
+
+	// dangerous!!! it will halt if there is no comunication.
+	while (charData != COM_TERMINATOR_)
 	{
+		*uart_str=charData;
 		uart_str++;
-		*uart_str= (char)UARTCharGet(ui32Base);
+		charData=(char)UARTCharGet(ui32Base);
 	}
-	*(uart_str+1)='\0';
+	*(uart_str)=STR_TERMINATOR_;
+}
+
+void SerialTerminator(uint32_t ui32Base)
+{
+	UARTCharPut(ui32Base,'\r');
+	UARTCharPut(ui32Base,'\n');
 }
 
 #else
 
 void SerialPutChar(uint32_t ui32Base,unsigned char uart_char)
 {
-	//	UARTCharPut(ui32Base,uart_char);
-	RingBufWriteOne(&(communicationFIFO->Tx),uart_char);
+	RingBufWriteOne(&(communicationFIFO.Tx),uart_char);
 }
 
 void SerialPutStr(uint32_t ui32Base,char *uart_str)
 {
-//	while(*uart_str != '\0') {UARTCharPut(ui32Base,*uart_str++ );}
-//	UARTCharPut(ui32Base,STR_TERMINATOR_);
-	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO->Tx),*uart_str++);}
-	RingBufWriteOne(&(communicationFIFO->Tx),STR_TERMINATOR_);
+	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO.Tx),*uart_str++);}
+	RingBufWriteOne(&(communicationFIFO.Tx),STR_TERMINATOR_);
 }
 
 // put data and update
 void SerialPutStrLn(uint32_t ui32Base,char *uart_str)
 {
-	//	while(*uart_str != '\0') {UARTCharPut(ui32Base,*uart_str++ );}
-	//	UARTCharPut(ui32Base,'\r');
-	//	UARTCharPut(ui32Base,'\n');
-	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO->Tx),*uart_str++);}
-	RingBufWriteOne(&(communicationFIFO->Tx),'\r');
-	RingBufWriteOne(&(communicationFIFO->Tx),'\n');
-	update_hardwareFIFO(&communicationFIFO,UART_COM_2_CONTROLLER_);
+	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO.Tx),*uart_str++);}
+	RingBufWriteOne(&(communicationFIFO.Tx),'\r');
+	RingBufWriteOne(&(communicationFIFO.Tx),'\n');
+	update_hardwareFIFO(&communicationFIFO,ui32Base);
 }
 
 void  SerialPutStr_NonTer(uint32_t ui32Base,char *uart_str)
 {
-	//	while(*uart_str != '\0') {UARTCharPut(ui32Base,*uart_str++ );}
-	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO->Tx),*uart_str++);}
+	while(*uart_str != '\0') {RingBufWriteOne(&(communicationFIFO.Tx),*uart_str++);}
 }
+
+void SerialTerminator(uint32_t ui32Base)
+{
+	RingBufWriteOne(&(communicationFIFO.Tx),'\r');
+	RingBufWriteOne(&(communicationFIFO.Tx),'\n');
+	update_hardwareFIFO(&communicationFIFO,ui32Base);
+}
+
+//void forward_message(uint32_t ui32Base,char *uart_str)
+//{
+//	while(*uart_str != '\n') {RingBufWriteOne(&(communicationFIFO.Tx),*uart_str++);}
+//	RingBufWriteOne(&(communicationFIFO.Tx),'\r');
+//	RingBufWriteOne(&(communicationFIFO.Tx),'\n');
+//	update_hardwareFIFO(&communicationFIFO,UART_COM_2_CONTROLLER_);
+//}
 
 //void SerialGetStr(uint32_t ui32Base,char *uart_str)
 //{

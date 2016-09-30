@@ -41,12 +41,12 @@ static void IntDefaultHandler(void);
 //
 //*****************************************************************************
 extern void _c_int00(void);
-extern void  UART0_Interrupt_Handler(void);
+//extern void  UART0_Interrupt_Handler(void);
 //extern void  UART1_Interrupt_Handler(void);
-//extern void  UART6_Interrupt_Handler(void);
-//extern void GPIOD_Interrupt_Handler(void);
-//extern void GPIOC_Interrupt_Handler(void);
-//extern void GPIOE_Interrupt_Handler(void);
+extern void  UART6_Interrupt_Handler(void);
+extern void GPIOD_Interrupt_Handler(void);
+extern void GPIOC_Interrupt_Handler(void);
+extern void GPIOE_Interrupt_Handler(void);
 //extern void GPIOB_Interrupt_Handler(void);
 extern void  Timer0_Interrupt_Handler(void);
 extern void SycTick_Interrupt_Handler(void);
@@ -93,10 +93,10 @@ void (* const g_pfnVectors[])(void) =
 	SycTick_Interrupt_Handler,         // The SysTick handler//SycTick_Interrupt_Handler,
 	IntDefaultHandler,                      // GPIO Port A
 	IntDefaultHandler,                      // GPIO Port B
-	IntDefaultHandler,                      // GPIO Port C
-	IntDefaultHandler,                      // GPIO Port D
-	IntDefaultHandler,                      // GPIO Port E
-	UART0_Interrupt_Handler,                      // UART0 Rx and Tx
+	GPIOC_Interrupt_Handler,                      // GPIO Port C
+	GPIOD_Interrupt_Handler,                      // GPIO Port D
+	GPIOE_Interrupt_Handler,                      // GPIO Port E
+	IntDefaultHandler,                      // UART0 Rx and Tx
 	IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
@@ -153,7 +153,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART3 Rx and Tx
     IntDefaultHandler,                      // UART4 Rx and Tx
     IntDefaultHandler,                      // UART5 Rx and Tx
-	IntDefaultHandler,                      // UART6 Rx and Tx
+	UART6_Interrupt_Handler,                      // UART6 Rx and Tx
     IntDefaultHandler,                      // UART7 Rx and Tx
     0,                                      // Reserved
     0,                                      // Reserved
