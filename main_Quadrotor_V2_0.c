@@ -10,13 +10,14 @@
 void controller();
 void communication();
 void display_com();
+//void task_200Hz();
 void task_100Hz();
 void task_20Hz();
 void task_IMU();
 void task_RF();
 void mode_selection();
-void runController();
-
+void Stable_Controller();
+void height_controller();
 
 
 void main(void) {
@@ -27,12 +28,12 @@ void main(void) {
 	SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
 	myIO_init();
 	led(LED_RED,0);
+	led(LED_BLUE,1);
 
 	UART6_Init();
 	//	UART1_Init();
 	//	UART0_Init();
-	//	myFIFO_init(&kinectFIFO);
-	//	I2C1_Init();
+
 	PPM_init();
 	Timer0_init();
 	SysTick_Init();
@@ -40,7 +41,7 @@ void main(void) {
 	while(MPU6050_Init());
 
 	RF_init();
-
+	Sonar_module_init();
 
 
 	// timer - sensor - communication
@@ -55,6 +56,8 @@ void main(void) {
 	 */
 	//
 	while(Calib_Gyro());
+	while(Calib_Sonar_module());
+	led(LED_BLUE,0);
 
 	SerialPutStrLn(UART_COM_2_CONTROLLER_,"config done!");
 	PID_init();
@@ -67,29 +70,65 @@ void main(void) {
 		mode_selection();
 		task_RF();
 		task_IMU();
-		//		if(Flag_Safe.RF_module==0)
-		//		{
-		//			IMU.yaw_gyro=0;
-		//			PID_yaw.set_point=0;
-		//			PID_reset();
-		//
-		//			ESC_ppm(1,ESC_1_MIN);
-		//			ESC_ppm(2,ESC_2_MIN);
-		//			ESC_ppm(3,ESC_3_MIN);
-		//			ESC_ppm(4,ESC_4_MIN);
-		//			safe_check();
-		//		}
+		height_controller();
 
 		/* code for position control
 		 *
 		 */
 		task_20Hz();
 		task_100Hz();
+		//		task_200Hz();
 
 
 	}//end of while(1)
 }//end of main
 
+
+void height_controller(){
+	//#ifdef SONAR_HOLD_ATTITUDE
+	if(Flag.SonarHoldAttitudeMode){
+		if((Sonar_module.flag_update==1)&&(Flag.run_controller==1))
+		{
+
+			Sonar_module.flag_update=0;
+			Sonar_module.attitude=Sonar_module.distance*cos_roll*cos_pitch;
+			/*
+			 * Your code start from here
+			 */
+			uint32_t microSecond=0;
+			microSecond=getMicroSecond();
+			sampling_time_second=(float)(microSecond- preMicroSecond_sonar)/1000000.0;
+			preMicroSecond_sonar=microSecond;
+
+			/*
+			 * Y_Controller
+			 */
+			PID_z.sampling_time=sampling_time_second;
+
+			if(PID_z.set_point<30)
+			{
+				if(Flag.PID_z_controller==1)
+				{
+					Flag.PID_z_controller=0;
+					PID_y.I_term=0;
+				}
+				Flag.PD_z_controller=1;
+				PD_type_3(Sonar_module.attitude,&PID_z);
+			}
+
+			else{
+				if(Flag.PD_z_controller==1)
+				{
+					Flag.PD_z_controller=0;
+					PID_z.I_term=0;
+				}
+				Flag.PID_z_controller=1;
+				PID_type_3(Sonar_module.attitude,&PID_z);
+			}
+
+		}
+	}
+}
 void task_IMU()
 {
 	if(flag_MPU6050_INTpin==1)
@@ -117,11 +156,11 @@ void task_IMU()
 		 *  running controller
 		 */
 		if(Flag.run_controller)
-			runController();
+			Stable_Controller();
 	}// end of (flag_MPU6050_INTpin==1)
 }
 
-void runController(){
+void Stable_Controller(){
 	PID_roll.sampling_time=sampling_time_second;
 	PID_pitch.sampling_time=sampling_time_second;
 	PID_yaw.sampling_time=sampling_time_second;
@@ -136,9 +175,9 @@ void runController(){
 
 	if(RF_module.Channel_3<1400)
 	{
-		if(Flag.PID_controller==1)
+		if(Flag.PID_o_controller==1)
 		{
-			Flag.PID_controller=0;
+			Flag.PID_o_controller=0;
 			PID_pitch.I_term=0;
 			PID_roll.I_term=0;
 			PID_yaw.I_term=0;
@@ -146,7 +185,7 @@ void runController(){
 			PID_yaw.set_point=0;
 			IMU.yaw_gyro=0;
 		}
-		Flag.PD_controller=1;
+		Flag.PD_o_controller=1;
 
 		PD_type_3(IMU.roll,&PID_roll);
 		PD_type_3(IMU.pitch,&PID_pitch);
@@ -154,14 +193,14 @@ void runController(){
 
 	}
 	else{
-		if(Flag.PD_controller==1)
+		if(Flag.PD_o_controller==1)
 		{
-			Flag.PD_controller=0;
+			Flag.PD_o_controller=0;
 			PID_pitch.I_term=0;
 			PID_roll.I_term=0;
 			PID_yaw.I_term=0;
 		}
-		Flag.PID_controller=1;
+		Flag.PID_o_controller=1;
 
 		PID_type_3(IMU.roll,&PID_roll);
 		PID_type_3(IMU.pitch,&PID_pitch);
@@ -174,7 +213,7 @@ void runController(){
 	 */
 	//#ifdef SONAR_HOLD_ATTITUDE
 	if(Flag.SonarHoldAttitudeMode){
-		Socket.throttle=Socket.throttle_offset+PID_y.output;
+		Socket.throttle=Socket.throttle_offset+PID_z.output;
 		if ((cos_roll>0)&&(cos_pitch>0)&&(Socket.throttle>=0))
 		{
 			Socket.attitude_hold_throttle=sqrt(Socket.throttle/cos_roll/cos_pitch);
@@ -188,11 +227,11 @@ void runController(){
 	}
 	else{
 		//#else
-			if ((cos_roll>0)&&(cos_pitch>0)&&(Socket.input_throttle>=0))
-			{
-				Socket.attitude_hold_throttle=sqrt(Socket.input_throttle/cos_roll/cos_pitch);
-				Socket.attitude_hold_throttle=Map_y(Socket.attitude_hold_throttle,0,10,0,1000);
-			}
+		if ((cos_roll>0)&&(cos_pitch>0)&&(Socket.input_throttle>=0))
+		{
+			Socket.attitude_hold_throttle=sqrt(Socket.input_throttle/cos_roll/cos_pitch);
+			Socket.attitude_hold_throttle=Map_y(Socket.attitude_hold_throttle,0,10,0,1000);
+		}
 	}
 	//#endif
 
@@ -260,6 +299,8 @@ void task_RF()
 		/*
 		 * Your code begin from here
 		 */
+		if(Flag.display)
+					display_com();
 
 		/*
 		 * Map RF signals to user control(remote) signal
@@ -271,7 +312,7 @@ void task_RF()
 				Socket.input_throttle=0;
 			else if(Socket.input_throttle>1000)
 				Socket.input_throttle=1000;
-			PID_y.set_point=Socket.input_throttle;
+			PID_z.set_point=Socket.input_throttle;
 		}
 		else{
 			//#else
@@ -353,6 +394,7 @@ void task_RF()
 		PID_pitch.set_point = Socket.input_elevator+Socket.input_elevator_midpoint;
 		PID_roll.set_point = Socket.input_aileron+Socket.input_aileron_midpoint;
 	}
+
 }
 
 
@@ -373,16 +415,20 @@ void mode_selection()
 		if(Flag_SonarHoldAttitudeMode==1)
 		{
 			Flag.SonarHoldAttitudeMode=1;
+			SerialPutStrLn(UART_COM_2_CONTROLLER_,"auto_mode!");
+			led(LED_RED,1);
 		}
 		else
 		{
 			Flag.SonarHoldAttitudeMode=0;
+			SerialPutStrLn(UART_COM_2_CONTROLLER_,"manual_mode!");
+			led(LED_RED,0);
 		}
 
-		if(Flag.SonarHoldAttitudeMode)
-			led(LED_RED,1);
-		else
-			led(LED_RED,0);
+		//		if(Flag.SonarHoldAttitudeMode)
+		//			led(LED_RED,1);
+		//		else
+		//			led(LED_RED,0);
 
 		Flag.run_controller=1;
 		Flag.test_motor=1;
@@ -396,10 +442,9 @@ void task_20Hz(){
 		/*
 		 * Your code begin from here
 		 */
-		if(Flag.display)
-			display_com();
 	}
 }
+
 
 
 void task_100Hz(){
@@ -417,40 +462,37 @@ void task_100Hz(){
 
 void display_com(){
 	char buffer[20];
-	toggle_led[0]^=1;
-	led(LED_BLUE,toggle_led[0]);
-
-	int2num(RF_module.Channel_1,buffer);
+	int2num(Sonar_module.pulse_width,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_1_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
-	int2num(RF_module.Channel_2,buffer);
+	float2num(Sonar_module.distance,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_2_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
 	int2num(RF_module.Channel_3,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_3_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
-
-	int2num(RF_module.Channel_4,buffer);
+	//
+	int2num(Socket.attitude_hold_throttle,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_4_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
-
-	int2num(RF_module.Channel_5,buffer);
-	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_5_);
-	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
-
-	int2num(RF_module.Channel_6,buffer);
-	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_6_);
-	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 	//
-	int2num(RF_module.Channel_7,buffer);
-	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_7_);
-	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
-
-	int2num(RF_module.Channel_8,buffer);
-	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_8_);
-	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+//	int2num(RF_module.Channel_3,buffer);
+//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_5_);
+//	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	//
+	//	int2num(RF_module.Channel_6,buffer);
+	//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_6_);
+	//	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	//	//
+	//	int2num(RF_module.Channel_7,buffer);
+	//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_7_);
+	//	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	//
+	//	int2num(RF_module.Channel_8,buffer);
+	//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_8_);
+	//	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 	//
 	//	int2num(-12343.23,buffer);
 	//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_9_);
@@ -461,142 +503,7 @@ void display_com(){
 	//	SerialPutStrLn(UART_COM_2_CONTROLLER_,buffer);
 
 	SerialTerminator(UART_COM_2_CONTROLLER_);
-	toggle_led[0]^=1;
-	led(LED_BLUE,toggle_led[0]);
 }
-
-//void run()
-//{
-//	PID_roll.sampling_time=sampling_time_second;
-//	PID_pitch.sampling_time=sampling_time_second;
-//	PID_yaw.sampling_time=sampling_time_second;
-//
-//#ifdef SONAR_HOLD_ATTITUDE
-//	if(PID_y.set_point<10)
-//#else
-//		if(Socket.input_throttle<20)
-//#endif
-//		{
-//			if(Flag.PID_controller==1)
-//			{
-//				Flag.PID_controller=0;
-//				PID_pitch.I_term=0;
-//				PID_roll.I_term=0;
-//				PID_yaw.I_term=0;
-//			}
-//			Flag.PD_controller=1;
-//
-//			PD_type_3(IMU.roll,&PID_roll);
-//			PD_type_3(IMU.pitch,&PID_pitch);
-//			PD_type_3(IMU.yaw_gyro,&PID_yaw);
-//
-//		}
-//		else{
-//			if(Flag.PD_controller==1)
-//			{
-//				Flag.PD_controller=0;
-//				PID_pitch.I_term=0;
-//				PID_roll.I_term=0;
-//				PID_yaw.I_term=0;
-//			}
-//			Flag.PID_controller=1;
-//
-//			PID_type_3(IMU.roll,&PID_roll);
-//			PID_type_3(IMU.pitch,&PID_pitch);
-//			PID_type_3(IMU.yaw_gyro,&PID_yaw);
-//		}
-//
-//
-//	cos_roll=cos(IMU.roll*deg_to_rad);
-//	cos_pitch=cos(IMU.pitch*deg_to_rad);
-//	/*
-//	 * height control
-//	 */
-//#ifdef SONAR_HOLD_ATTITUDE
-//	Socket.throttle=Socket.throttle_offset+PID_y.output;
-//	if ((cos_roll>0)&&(cos_pitch>0)&&(Socket.throttle>=0))
-//	{
-//		Socket.attitude_hold_throttle=sqrt(Socket.throttle/cos_roll/cos_pitch);
-//		Socket.attitude_hold_throttle=Map_y(Socket.attitude_hold_throttle,0,10,0,1000);
-//	}
-//
-//	if (Socket.attitude_hold_throttle<MIN_THROTTLE)
-//		Socket.attitude_hold_throttle=MIN_THROTTLE;
-//	else if(Socket.attitude_hold_throttle>MAX_THROTTLE)
-//		Socket.attitude_hold_throttle=MAX_THROTTLE;
-//
-//
-//#else
-//	if ((cos_roll>0)&&(cos_pitch>0)&&(Socket.input_throttle>=0))
-//	{
-//		Socket.attitude_hold_throttle=sqrt(Socket.input_throttle/cos_roll/cos_pitch);
-//		Socket.attitude_hold_throttle=Map_y(Socket.attitude_hold_throttle,0,10,0,1000);
-//	}
-//#endif
-//
-//	Socket.output_1=Socket.attitude_hold_throttle;
-//	Socket.output_2=Socket.attitude_hold_throttle;
-//	Socket.output_3=Socket.attitude_hold_throttle;
-//	Socket.output_4=Socket.attitude_hold_throttle;
-//
-//	/*
-//	 * pitch control
-//	 */
-//
-//#ifdef QUADCOPTER_V_1
-//	Socket.output_1 -= PID_pitch.output;
-//	Socket.output_4 -= PID_pitch.output;
-//	Socket.output_2 += PID_pitch.output;
-//	Socket.output_3 += PID_pitch.output;
-//#else
-//#ifdef QUADCOPTER_V_0
-//	Socket.output_1 += PID_pitch.output;
-//	Socket.output_4 += PID_pitch.output;
-//	Socket.output_2 -= PID_pitch.output;
-//	Socket.output_3 -= PID_pitch.output;
-//#endif
-//#endif
-//	/*
-//	 * roll control
-//	 */
-//	Socket.output_1 += PID_roll.output;
-//	Socket.output_2 += PID_roll.output;
-//	Socket.output_3 -= PID_roll.output;
-//	Socket.output_4 -= PID_roll.output;
-//
-//	/*
-//	 * yaw control
-//	 */
-//	Socket.output_1 -= PID_yaw.output;
-//	Socket.output_3 -= PID_yaw.output;
-//	Socket.output_2 += PID_yaw.output;
-//	Socket.output_4 += PID_yaw.output;
-//
-//	/*
-//	 * Map system's output (controller + remote) signal to ESC's input  signal
-//	 */
-//
-//	ESC.ppm_1=(int32_t)Map_y(Socket.output_1,0,1000,ESC_1_MIN,ESC_1_MAX);
-//	ESC.ppm_2=(int32_t)Map_y(Socket.output_2,0,1000,ESC_2_MIN,ESC_2_MAX);
-//	ESC.ppm_3=(int32_t)Map_y(Socket.output_3,0,1000,ESC_3_MIN,ESC_3_MAX);
-//	ESC.ppm_4=(int32_t)Map_y(Socket.output_4,0,1000,ESC_4_MIN,ESC_4_MAX);
-//
-//
-//	if(Flag.test_motor==1)
-//	{
-//		ESC_ppm(1, ESC.ppm_1);
-//		ESC_ppm(2, ESC.ppm_2);
-//		ESC_ppm(3, ESC.ppm_3);
-//		ESC_ppm(4, ESC.ppm_4);
-//	}
-//	else
-//	{
-//		ESC_ppm(1,ESC_1_MIN);
-//		ESC_ppm(2,ESC_2_MIN);
-//		ESC_ppm(3,ESC_3_MIN);
-//		ESC_ppm(4,ESC_4_MIN);
-//	}
-//}
 
 
 //volatile uint16_t PositionSensor_count=0;

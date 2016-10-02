@@ -78,11 +78,6 @@ void SycTick_Interrupt_Handler(void)
 	SysTick_Int_Count.Hz_5++;
 
 	FlagTimer.Hz_200=1;
-//	if(Flag.sonar==1)
-//	{
-//		//		Flag.sonar=0;
-//		//		led(LED_BLUE,0);
-//	}
 
 	if(SysTick_Int_Count.Hz_100==COUNT_100_HZ_)
 	{

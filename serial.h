@@ -3,7 +3,7 @@
 #ifndef QUADROTOR_CURRENT_WORK_SERIAL_H_
 #define QUADROTOR_CURRENT_WORK_SERIAL_H_
 
-//#define USE_FIFO_UART_
+#define USE_FIFO_UART_
 /*
  * Define uart for hardware
  */

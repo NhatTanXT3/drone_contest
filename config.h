@@ -33,7 +33,7 @@
 #include "RF.h"
 #include "PPM.h"
 #include "PID.h"
-//#include "MaxSonar.h"
+#include "Sonar.h"
 //#include "Kinect.h"
 
 #include "numManipulate.h"
@@ -120,10 +120,12 @@ typedef struct{
 	unsigned char set_parameter_y:1;
 	unsigned char set_parameter_x:1;
 	unsigned char set_parameter_z:1;
-	unsigned char PD_controller:1;
-	unsigned char PID_controller:1;
-	unsigned char PD_y_controller:1;
-	unsigned char PID_y_controller:1;
+	unsigned char PD_o_controller:1;
+	unsigned char PID_o_controller:1;
+
+	unsigned char PD_z_controller:1;
+	unsigned char PID_z_controller:1;
+
 	unsigned char Position_controller:1;
 	volatile unsigned char sonar:1;
 	unsigned char SonarHoldAttitudeMode:1;
@@ -208,14 +210,14 @@ void PID_init()
 	PID_yaw.pre_er=0;
 	PID_yaw.pre_pre_er=0;
 
-	PID_y.set_point=0;
-	PID_y.KP=0.03;
-	PID_y.KI=0.02;
-	PID_y.KD=0.05;
-	PID_y.output=0;
-	PID_y.er=0;
-	PID_y.pre_er=0;
-	PID_y.pre_pre_er=0;
+	PID_z.set_point=0;
+	PID_z.KP=0.03;
+	PID_z.KI=0.02;
+	PID_z.KD=0.05;
+	PID_z.output=0;
+	PID_z.er=0;
+	PID_z.pre_er=0;
+	PID_z.pre_pre_er=0;
 
 	PID_x.set_point=0;
 	PID_x.KP=0.0002;//0.0002;
@@ -226,14 +228,14 @@ void PID_init()
 	PID_x.pre_er=0;
 	PID_x.pre_pre_er=0;
 
-	PID_z.set_point=1400;
-	PID_z.KP=0.0002;//0.0002;
-	PID_z.KI=0.0003;//0.0003;
-	PID_z.KD=0.0035;//0.0035;
-	PID_z.output=0;
-	PID_z.er=0;
-	PID_z.pre_er=0;
-	PID_z.pre_pre_er=0;
+	PID_y.set_point=1400;
+	PID_y.KP=0.0002;//0.0002;
+	PID_y.KI=0.0003;//0.0003;
+	PID_y.KD=0.0035;//0.0035;
+	PID_y.output=0;
+	PID_y.er=0;
+	PID_y.pre_er=0;
+	PID_y.pre_pre_er=0;
 
 	/*
 	 * pid type_1
@@ -247,14 +249,14 @@ void PID_init()
 	PID_yaw.I_term=0;
 	PID_yaw.I_limit=500;
 
-	PID_y.I_term=0;
-	PID_y.I_limit=30;
+	PID_z.I_term=0;
+	PID_z.I_limit=30;
 
 	PID_x.I_term=0;
 	PID_x.I_limit=0.8;
 
-	PID_z.I_term=0;
-	PID_z.I_limit=0.8;
+	PID_y.I_term=0;
+	PID_y.I_limit=0.8;
 	/*
 	 * pid type 3
 	 */
@@ -279,10 +281,10 @@ void PID_init()
 	/*
 	 * state
 	 */
-	Flag.PD_controller=0;
-	Flag.PID_controller=0;
-	Flag.PD_y_controller=0;
-	Flag.PID_y_controller=0;
+	Flag.PD_o_controller=0;
+	Flag.PID_o_controller=0;
+	Flag.PD_z_controller=0;
+	Flag.PID_z_controller=0;
 }
 
 void PID_reset()

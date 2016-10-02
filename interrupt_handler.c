@@ -17,7 +17,7 @@
 #include "RF.h"
 #include "serial.h"
 #include "myTimer.h"
-
+#include "Sonar.h"
 /*
  * for Sonar module
  */
@@ -36,34 +36,28 @@ void GPIOE_Interrupt_Handler(void)
 	//	led(LED_RED,toggle_led[2]);
 
 	switch(interrupt_status){
+	case GPIO_INT_PIN_0:
+		GPIOIntClear(GPIO_PORTE_BASE,GPIO_INT_PIN_0);
+		if(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0)==GPIO_PIN_0)
+		{
+			Sonar_module.rise_time=getMicroSecond();
+		}
+		else
+		{
+			Sonar_module.pulse_width=getMicroSecond()-Sonar_module.rise_time;
+			if((Sonar_module.pulse_width>SONAR_MIN_PULSE_WIDTH_)&&(Sonar_module.pulse_width<SONAR_MAX_PULSE_WIDTH_))
+			{
+				Sonar_module.distance=Sonar_module.distance*SONAR_FILTER_FACTOR+(1-SONAR_FILTER_FACTOR)*(Sonar_module.pulse_width-Sonar_module.pulse_width_offset)*SONAR_SCALE_FACTOR;
+				Sonar_module.flag_update=1;
+			}
+			else
+			{
+				Sonar_module.fail_signal_count++;
+				SerialPutStrLn(UART_COM_2_CONTROLLER_,"error_sonar");
+			}
 
-	//	case GPIO_INT_PIN_0:
-	//		GPIOIntClear(GPIO_PORTE_BASE,GPIO_INT_PIN_0);
-	//		if(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0)==GPIO_PIN_0)
-	//		{
-	//			MaxSonar.rise_time=getMicroSecond();
-	//		}
-	//		else
-	//		{
-	//			MaxSonar.pulse_width=getMicroSecond()-MaxSonar.rise_time;
-	//			//			MaxSonar.d_pulse_width=MaxSonar.pre_pulse_width-MaxSonar.pulse_width;
-	//			//			MaxSonar.pre_pulse_width=MaxSonar.pulse_width;
-	//			//
-	//			//			if(((MaxSonar.d_pulse_width)<1000))
-	//			//			{
-	//			MaxSonar.flag_update=1;
-	//			if((MaxSonar.pulse_width>MAXSONAR_MIN_PULSE_WIDTH_)&&(MaxSonar.pulse_width<MAXSONAR_MAX_PULSE_WIDTH_))
-	//			{
-	//				MaxSonar.distance=MaxSonar.distance*MAXSONAR_FILTER_FACTOR+(1-MAXSONAR_FILTER_FACTOR)*(MaxSonar.pulse_width-MaxSonar.pulse_width_offset)*MAXSONAR_SCALE_FACTOR;
-	//			}
-	//			else
-	//			{
-	//				MaxSonar.fail_signal_count++;
-	//				//UartPutStr(UART_BASE,"error_sonar");
-	//			}
-	//
-	//		}
-	//		break;
+		}
+		break;
 	case GPIO_INT_PIN_1:
 		GPIOIntClear(GPIO_PORTE_BASE,GPIO_INT_PIN_1);
 		if(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_1)==GPIO_PIN_1)
