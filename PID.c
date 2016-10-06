@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "PID.h"
 #include "numManipulate.h"
-
+//PID_type PID;
 
 void PID_controller(float feeback, PID *ptr_pid)
 {

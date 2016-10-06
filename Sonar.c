@@ -111,7 +111,7 @@ void Sonar_module_init(){
 
 unsigned char Calib_Sonar_module()
 {
-	SerialPutStrLn(UART_COM_2_CONTROLLER_," leave sonar module under ground for calib!!!");
+
 	Sonar_module.pulse_width_offset=0;
 
 	int32_t sum=0;
@@ -161,3 +161,5 @@ unsigned char Calib_Sonar_module()
 
 	return 0;
 }
+
+

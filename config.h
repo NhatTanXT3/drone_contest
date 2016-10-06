@@ -40,6 +40,7 @@
 #include "interrupt_handler.h"
 #include "safety.h"
 #include "config.h"
+#include "estimator.h"
 
 //#define SONAR_HOLD_ATTITUDE
 //#define USE_KINECT

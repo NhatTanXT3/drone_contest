@@ -33,7 +33,6 @@ typedef struct{
 	float pre_pre_fb;
 }PID;
 
-
 extern void PID_controller(float feeback, PID *ptr_pid);
 extern void PD_controller(float feeback, PID *ptr_pid);
 

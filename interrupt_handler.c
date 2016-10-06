@@ -48,6 +48,9 @@ void GPIOE_Interrupt_Handler(void)
 			if((Sonar_module.pulse_width>SONAR_MIN_PULSE_WIDTH_)&&(Sonar_module.pulse_width<SONAR_MAX_PULSE_WIDTH_))
 			{
 				Sonar_module.distance=Sonar_module.distance*SONAR_FILTER_FACTOR+(1-SONAR_FILTER_FACTOR)*(Sonar_module.pulse_width-Sonar_module.pulse_width_offset)*SONAR_SCALE_FACTOR;
+				Sonar_module.distance_1=Sonar_module.distance_1*0.5+(1-0.5)*(Sonar_module.pulse_width-Sonar_module.pulse_width_offset)*SONAR_SCALE_FACTOR;
+				Sonar_module.distance_raw=(Sonar_module.pulse_width-Sonar_module.pulse_width_offset)*SONAR_SCALE_FACTOR;
+
 				Sonar_module.flag_update=1;
 			}
 			else

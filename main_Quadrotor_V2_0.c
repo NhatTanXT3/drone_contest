@@ -55,7 +55,11 @@ void main(void) {
 	 *================  software's initialization ====================================
 	 */
 	//
+	SerialPutStrLn(UART_COM_2_CONTROLLER_,"calib gyroscope offset ...");
 	while(Calib_Gyro());
+	SerialPutStrLn(UART_COM_2_CONTROLLER_,"calib accelerometer offset ...");
+	while(Calib_Accelerometer_Amplitude());
+	SerialPutStrLn(UART_COM_2_CONTROLLER_," leave sonar module under ground for calib!!!...");
 	while(Calib_Sonar_module());
 	led(LED_BLUE,0);
 
@@ -63,6 +67,8 @@ void main(void) {
 	PID_init();
 	GUI_init();
 	IMU_init();
+	model_init();
+//	quad_model.g=MPU6050.acc_amplitude_offset;
 	safe_check();
 	while(1)
 	{
@@ -151,6 +157,7 @@ void task_IMU()
 		 * sensor processing
 		 */
 		angle(sampling_time_second);
+		update_accelerometer();
 
 		/*
 		 *  running controller
@@ -269,6 +276,7 @@ void Stable_Controller(){
 	/*
 	 * Map system's output (controller + remote) signal to ESC's input  signal
 	 */
+	update_omega(Socket.output_1,Socket.output_2,Socket.output_3,Socket.output_4);
 
 	ESC.ppm_1=(int32_t)Map_y(Socket.output_1,0,1000,ESC_1_MIN,ESC_1_MAX);
 	ESC.ppm_2=(int32_t)Map_y(Socket.output_2,0,1000,ESC_2_MIN,ESC_2_MAX);
@@ -299,8 +307,7 @@ void task_RF()
 		/*
 		 * Your code begin from here
 		 */
-		if(Flag.display)
-					display_com();
+
 
 		/*
 		 * Map RF signals to user control(remote) signal
@@ -454,6 +461,8 @@ void task_100Hz(){
 		/*
 		 * Your code begin from here
 		 */
+		if(Flag.display)
+			display_com();
 
 	}
 }
@@ -462,25 +471,25 @@ void task_100Hz(){
 
 void display_com(){
 	char buffer[20];
-	int2num(Sonar_module.pulse_width,buffer);
+	float2num(MPU6050.z1_dot_dot,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_1_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
-	float2num(Sonar_module.distance,buffer);
+	float2num(quad_model.z1_dot_dot,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_2_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 
-	int2num(RF_module.Channel_3,buffer);
+	float2num(Sonar_module.distance,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_3_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 	//
-	int2num(Socket.attitude_hold_throttle,buffer);
+	float2num(MPU6050.accY,buffer);
 	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_4_);
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 	//
-//	int2num(RF_module.Channel_3,buffer);
-//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_5_);
-//	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
+	float2num(MPU6050.accZ,buffer);
+	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_5_);
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,buffer);
 	//
 	//	int2num(RF_module.Channel_6,buffer);
 	//	SerialPutChar(UART_COM_2_CONTROLLER_ ,CN_6_);

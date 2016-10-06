@@ -11,7 +11,9 @@
 #define MPU6050_H_
 
 #define MPU6050_ADDRESS 		0x68
-struct
+#define ACCLEROMETER_SCALE_FACTOR	0.0023879 //for +-8g accelerometer
+
+typedef struct
 {
 	int16_t accX_raw; // accX
 	int16_t accY_raw;
@@ -23,17 +25,28 @@ struct
 	float gyroX_0Rate;
 	float gyroY_0Rate;
 	float gyroZ_0Rate;
-} MPU6050;
+
+	float accX;
+	float accY;
+	float accZ;
+	float acc_amplitude;
+	float acc_amplitude_offset;
+	float z1_dot_dot;
+} MPU6050_type;
+
+extern MPU6050_type MPU6050;
 
 extern volatile uint8_t flag_MPU6050_INTpin;//declare a variable, which is defined in mpu6050.c
 
 extern uint8_t Calib_Gyro();
+extern uint8_t Calib_Accelerometer_Amplitude();
  extern void MPU6050_INTpin_Init();
  extern uint8_t MPU6050_Init();
- extern uint8_t MPU6050DataAccelGetRaw (uint16_t *pui16AccelX,uint16_t *pui16AccelY, uint16_t *pui16AccelZ);
+ extern uint8_t MPU6050DataAccelGetRaw (int16_t *pui16AccelX,int16_t *pui16AccelY, int16_t *pui16AccelZ);
  extern uint8_t MPU6050DataGyroGetRaw (int16_t *pui16AccelX,int16_t *pui16AccelY, int16_t *pui16AccelZ);
  extern uint8_t MPU6050DataTempGetRaw (uint16_t *pui16Temp);
  extern uint8_t MPU6050DataGetRaw(int16_t *pui16Data);
+ extern void update_accelerometer();
 
 
 

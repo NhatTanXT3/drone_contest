@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
@@ -21,15 +22,16 @@
 
 volatile uint8_t flag_MPU6050_INTpin=0;
 volatile uint8_t flag_I2C_connection=1;
-
+MPU6050_type MPU6050;
 /*------------------------config cho MPU6050--------------------------------------------
  *
  --------------------------------------------------------------------------------------*/
 #define GYRO_NOISE_RANGE 10 //use with gyro range: 1000 deg/s
 #define UART_DEBUG_CALIB_GYRO
-
+#define ACC_NOISE_RANGE_ 0.15
 uint8_t Calib_Gyro()
 {
+
 	int32_t sum[3]={0,0,0};
 	uint16_t numOfsamples=200;
 
@@ -76,7 +78,7 @@ uint8_t Calib_Gyro()
 			if((max_value[j]-min_value[j])>=GYRO_NOISE_RANGE)
 			{
 #ifdef UART_DEBUG_CALIB_GYRO
-				SerialPutStrLn(UART_COM_2_CONTROLLER_,"error gyro noise!");
+				//				SerialPutStrLn(UART_COM_2_CONTROLLER_,"error gyro noise!");
 #endif
 				return 1;
 			}
@@ -89,16 +91,16 @@ uint8_t Calib_Gyro()
 	MPU6050.gyroX_0Rate=(float)sum[0]/numOfsamples;
 	MPU6050.gyroY_0Rate=(float)sum[1]/numOfsamples;
 	MPU6050.gyroZ_0Rate=(float)sum[2]/numOfsamples;
-	toggle_led[2]^=1;
-	led(LED_RED,toggle_led[2]);
+	//	toggle_led[2]^=1;
+	//	led(LED_RED,toggle_led[2]);
 
 
 
-//#ifdef	USE_TXFIFO_
-//	FIFO_3_float_display(MPU6050.gyroX_0Rate,MPU6050.gyroY_0Rate,MPU6050.gyroZ_0Rate);
-//#else
-//	UART_3_float_display(UART_BASE,MPU6050.gyroX_0Rate,MPU6050.gyroY_0Rate,MPU6050.gyroZ_0Rate);
-//#endif
+	//#ifdef	USE_TXFIFO_
+	//	FIFO_3_float_display(MPU6050.gyroX_0Rate,MPU6050.gyroY_0Rate,MPU6050.gyroZ_0Rate);
+	//#else
+	//	UART_3_float_display(UART_BASE,MPU6050.gyroX_0Rate,MPU6050.gyroY_0Rate,MPU6050.gyroZ_0Rate);
+	//#endif
 	SerialPutStrLn(UART_COM_2_CONTROLLER_,"Gyro offset: ");
 	char uartBuffer[10];
 	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,"X offset: ");
@@ -191,19 +193,19 @@ uint8_t MPU6050_Init()
 	return 0;
 }
 
-uint8_t MPU6050DataAccelGetRaw (uint16_t *pui16AccelX,uint16_t *pui16AccelY, uint16_t *pui16AccelZ)
+uint8_t MPU6050DataAccelGetRaw (int16_t *pui16AccelX,int16_t *pui16AccelY, int16_t *pui16AccelZ)
 {
 	unsigned char mpu6050_raw_data[6];
 	if (I2C_Read(I2C_USE,MPU6050_ADDRESS,MPU6050_O_ACCEL_XOUT_H,mpu6050_raw_data,6)) return 1;
 	*pui16AccelX = ((mpu6050_raw_data[0]<<8)|mpu6050_raw_data[1]);
 	*pui16AccelY = (mpu6050_raw_data[2]<<8)|mpu6050_raw_data[3];
-	*pui16AccelZ = (mpu6050_raw_data[0]<<8)|mpu6050_raw_data[5];
+	*pui16AccelZ = (mpu6050_raw_data[4]<<8)|mpu6050_raw_data[5];
 	return 0;
 }
 
 uint8_t MPU6050DataGyroGetRaw (int16_t *pui16AccelX,int16_t *pui16AccelY, int16_t *pui16AccelZ)
 {
-	uint8_t mpu6050_raw_data[6];
+	unsigned char mpu6050_raw_data[6];
 	if (I2C_Read(I2C_USE,MPU6050_ADDRESS,MPU6050_O_GYRO_XOUT_H,mpu6050_raw_data,6)) return 1;
 	*pui16AccelX = (mpu6050_raw_data[0]<<8)|mpu6050_raw_data[1];
 	*pui16AccelY = (mpu6050_raw_data[2]<<8)|mpu6050_raw_data[3];
@@ -241,9 +243,76 @@ uint8_t MPU6050DataGetRaw(int16_t *pui16Data)
 	return 0;
 }
 
+void update_accelerometer(){
+	MPU6050.accX=(float)MPU6050.accX_raw*ACCLEROMETER_SCALE_FACTOR;
+	MPU6050.accY=(float)MPU6050.accY_raw*ACCLEROMETER_SCALE_FACTOR;
+	MPU6050.accZ=(float)MPU6050.accZ_raw*ACCLEROMETER_SCALE_FACTOR;
+	MPU6050.acc_amplitude=sqrt(MPU6050.accX*MPU6050.accX+MPU6050.accY*MPU6050.accY+MPU6050.accZ*MPU6050.accZ);
+	MPU6050.z1_dot_dot=MPU6050.acc_amplitude-MPU6050.acc_amplitude_offset;
+}
 
 
+uint8_t Calib_Accelerometer_Amplitude()
+{
 
+	char uartBuffer[10];
+	float sum=0;
+	uint16_t numOfsamples=200;
+
+	float max_value;
+	float min_value;
+	uint8_t i;
+
+	while(flag_MPU6050_INTpin==0);
+	flag_MPU6050_INTpin=0;
+
+	if(MPU6050DataAccelGetRaw (&MPU6050.accX_raw,&MPU6050.accY_raw,&MPU6050.accZ_raw))
+	{
+#ifdef UART_DEBUG_CALIB_GYRO
+		SerialPutStrLn(UART_COM_2_CONTROLLER_,"error I2C 0!");
+#endif
+		return 1;
+	}
+
+	update_accelerometer();
+
+	max_value=MPU6050.acc_amplitude;
+	min_value=MPU6050.acc_amplitude;
+
+
+	for (i=1; i<=numOfsamples;i++)
+	{
+		while(flag_MPU6050_INTpin ==  0);
+		flag_MPU6050_INTpin=0;
+		if(MPU6050DataAccelGetRaw (&MPU6050.accX_raw,&MPU6050.accY_raw,&MPU6050.accZ_raw))
+		{
+#ifdef UART_DEBUG_CALIB_GYRO
+			SerialPutStrLn(UART_COM_2_CONTROLLER_," error I2C!");
+#endif
+			return 1;
+		}
+		if(MPU6050.acc_amplitude>max_value) max_value=MPU6050.acc_amplitude;
+		else if(MPU6050.acc_amplitude<min_value) min_value=MPU6050.acc_amplitude;
+
+		if((max_value-min_value)>=ACC_NOISE_RANGE_)
+		{
+#ifdef UART_DEBUG_CALIB_GYRO
+			SerialPutStrLn(UART_COM_2_CONTROLLER_,"error acc noise!");
+#endif
+			return 1;
+		}
+		sum+=MPU6050.acc_amplitude;
+	}//end of for
+
+	MPU6050.acc_amplitude_offset=sum/numOfsamples;
+
+
+	SerialPutStr_NonTer(UART_COM_2_CONTROLLER_,"accleration amplitude offset: ");
+	float2num(MPU6050.acc_amplitude_offset,uartBuffer);
+	SerialPutStrLn(UART_COM_2_CONTROLLER_,uartBuffer);
+
+	return 0;
+}
 
 
 

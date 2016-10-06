@@ -66,6 +66,8 @@ typedef volatile struct{
 	unsigned char flag_update;
 	unsigned char fail_signal_count;
 	float distance;
+	float distance_1;
+	float distance_raw;
 	float attitude;
 	float pulse_width_offset;
 }Sonar_type;
